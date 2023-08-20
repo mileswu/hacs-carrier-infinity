@@ -24,52 +24,51 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
     auth = hass.data[DOMAIN][entry.entry_id]
-    coordinator = MyCoordinator(hass, auth)
 
     systems = await python_carrier_infinity.get_systems(auth)
     zones = []
+    coordinators = []
     for (system_id, system) in systems.items():
+        coordinator = MyCoordinator(hass, system)
+        coordinators.append(coordinator)
         config = await system.get_config()
-        for (zone_id, zone) in config.zones.items():
-            zones.append(Zone(coordinator, system_id, zone_id))
+        for zone_id in config.zones:
+            zones.append(Zone(coordinator, zone_id))
 
     async_add_entities(zones)
-    await coordinator.async_config_entry_first_refresh()
+    for coordinator in coordinators:
+        await coordinator.async_config_entry_first_refresh()
 
 class MyCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, auth):
+    def __init__(self, hass, system):
         super().__init__(
             hass,
             _LOGGER,
-            name="Carrier Infinity - %{auth.username}",
+            name=system.name,
             update_interval=timedelta(seconds=60),
         )
-        self.auth = auth
+        self.system = system
 
     async def _async_update_data(self):
-        systems = await python_carrier_infinity.get_systems(self.auth)
-        data = {}
-        for (system_id, system) in systems.items():
-            system_data = {}
-            system_data["config"] = await system.get_config()
-            system_data["status"] = await system.get_status()
-            data[system_id] = system_data
-        return data
+        config = await self.system.get_config()
+        status = await self.system.get_status()
+        return CoordinatorUpdate(self.system, config, status)
+
+class CoordinatorUpdate():
+    def __init__(self, system, config, status):
+        self.system = system
+        self.config = config
+        self.status = status
 
 class Zone(CoordinatorEntity, ClimateEntity):
-    def __init__(self, coordinator, system_id, zone_id):
-        super().__init__(coordinator, context=(system_id, zone_id))
-        self._system_id = system_id
-        self._zone_id = zone_id
-        self._current_temperature = None
+    def __init__(self, coordinator, zone_id):
+        super().__init__(coordinator)
+        self.zone_id = zone_id
 
     def _handle_coordinator_update(self) -> None:
-        system_data = self.coordinator.data[self._system_id]
-        status = system_data["status"].zones[self._zone_id]
-        print(status)
-        self._current_temperature = status.temperature
+        data = self.coordinator.data
+        self._attr_current_temperature = data.status.zones[self.zone_id].temperature
         self.async_write_ha_state()
-
 
     @property
     def hvac_modes(self):
@@ -82,10 +81,6 @@ class Zone(CoordinatorEntity, ClimateEntity):
     @property
     def temperature_unit(self) -> str:
         return TEMP_FAHRENHEIT
-
-    @property
-    def current_temperature(self) -> float | None:
-        return self._current_temperature
 
     @property
     def hvac_mode(self) -> HVACMode | None:
