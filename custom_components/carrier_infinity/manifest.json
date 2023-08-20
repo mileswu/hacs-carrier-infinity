@@ -1,0 +1,17 @@
+{
+  "domain": "carrier_infinity",
+  "name": "Carrier Infinity",
+  "codeowners": [
+    "@mileswu"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://www.home-assistant.io/integrations/carrier_infinity",
+  "homekit": {},
+  "iot_class": "cloud_polling",
+  "requirements": [
+    "==python-carrier-infinity-0.0.2"
+  ],
+  "ssdp": [],
+  "zeroconf": []
+}
