@@ -8,6 +8,7 @@ from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import HVACMode
 from homeassistant.const import TEMP_FAHRENHEIT
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 # from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity,
@@ -28,12 +29,12 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
     systems = await python_carrier_infinity.get_systems(auth)
     zones = []
     coordinators = []
-    for (system_id, system) in systems.items():
+    for system in systems.values():
         coordinator = MyCoordinator(hass, system)
         coordinators.append(coordinator)
         config = await system.get_config()
-        for zone_id in config.zones:
-            zones.append(Zone(coordinator, zone_id))
+        for zone_config in config.zones.values():
+            zones.append(Zone(coordinator, system, zone_config))
 
     async_add_entities(zones)
     for coordinator in coordinators:
@@ -61,9 +62,20 @@ class CoordinatorUpdate():
         self.status = status
 
 class Zone(CoordinatorEntity, ClimateEntity):
-    def __init__(self, coordinator, zone_id):
+    _attr_has_entity_name = True
+    _attr_name = None
+
+    def __init__(self, coordinator, system, zone_config):
         super().__init__(coordinator)
-        self.zone_id = zone_id
+        self.zone_id = zone_config.id
+        self._attr_unique_id = f"{system.serial}-{zone_config.id}"
+        name = f"{system.name} - {zone_config.name}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._attr_unique_id)},
+            name=name,
+            manafacturer="Carrier",
+            model="Infinity System"
+        )
 
     def _handle_coordinator_update(self) -> None:
         data = self.coordinator.data
@@ -85,5 +97,3 @@ class Zone(CoordinatorEntity, ClimateEntity):
     @property
     def hvac_mode(self) -> HVACMode | None:
         return None
-
-
