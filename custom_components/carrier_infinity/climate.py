@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import (
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 import python_carrier_infinity
-from python_carrier_infinity.types import FanSpeed, Mode, TemperatureUnits
+from python_carrier_infinity.types import ActivityName, FanSpeed, Mode, TemperatureUnits
 
 from .const import DOMAIN
 
@@ -69,7 +69,8 @@ class Zone(CoordinatorEntity, ClimateEntity):
     _attr_target_temperature_step = 1.0
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.HEAT_COOL, HVACMode.FAN_ONLY]
     _attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE_RANGE | ClimateEntityFeature.FAN_MODE
+    _attr_preset_modes = [activity.value for activity in ActivityName]
+    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE_RANGE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.PRESET_MODE
 
     # initialization values
     _attr_fan_mode = None
@@ -77,6 +78,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
     _attr_temperature_unit = TEMP_CELSIUS
     _attr_target_temperature_low = None
     _attr_target_temperature_high = None
+    _attr_preset_mode = None
 
     def __init__(self, coordinator, system, zone_config):
         super().__init__(coordinator)
@@ -104,6 +106,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
         self._attr_current_humidity = data.status.zones[self.zone_id].relative_humidity
         self._attr_target_temperature_low = data.status.zones[self.zone_id].target_heating_temperature
         self._attr_target_temperature_high = data.status.zones[self.zone_id].target_cooling_temperature
+        self._attr_preset_mode = data.status.zones[self.zone_id].activity
 
         if data.config.mode == Mode.OFF:
             self._attr_hvac_mode = HVACMode.OFF
