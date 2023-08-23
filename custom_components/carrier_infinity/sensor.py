@@ -18,11 +18,12 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 class OutsideTemperature(CoordinatorEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
     _attr_native_unit_of_measurement = TEMP_FAHRENHEIT
+    _attr_has_entity_name = True
+    _attr_name = "Outside Temperature"
 
     def __init__(self, coordinator, system):
         super().__init__(coordinator)
         self._attr_unique_id = f"{system.serial}-outsidetemp"
-        self._attr_name = "Outside Temperature"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, system.serial)},
             name=system.name,
@@ -46,11 +47,12 @@ class OutsideTemperature(CoordinatorEntity, SensorEntity):
 class Airflow(CoordinatorEntity, SensorEntity):
     _attr_device_class = None
     _attr_native_unit_of_measurement = "cfm"
+    _attr_has_entity_name = True
+    _attr_name = "Airflow"
 
     def __init__(self, coordinator, system):
         super().__init__(coordinator)
         self._attr_unique_id = f"{system.serial}-airflow"
-        self._attr_name = "Airflow"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, system.serial)},
             name=system.name,

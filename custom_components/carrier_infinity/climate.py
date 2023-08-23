@@ -53,7 +53,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
         self._attr_unique_id = f"{system.serial}-{zone_config.id}"
         self._attr_name = zone_config.name
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, system.serial)},
+            identifiers={(DOMAIN, self._attr_unique_id)},
             name=system.name,
             manufacturer="Carrier",
             model="Infinity System"
