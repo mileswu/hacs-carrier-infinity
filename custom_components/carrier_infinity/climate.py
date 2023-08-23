@@ -126,8 +126,6 @@ class Zone(CoordinatorEntity, ClimateEntity):
         self.async_write_ha_state()
 
     async def async_set_temperature(self, **kwargs):
-        print(kwargs)
-
         data = self.coordinator.data
         zone_config = data.config.zones[self.zone_id]
         cool_temp = data.status.zones[self.zone_id].target_cooling_temperature

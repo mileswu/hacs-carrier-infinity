@@ -15,7 +15,6 @@ class MyCoordinator(DataUpdateCoordinator):
         self.system = system
 
     async def _async_update_data(self):
-        print("FETCH")
         config = await self.system.get_config()
         status = await self.system.get_status()
         return CoordinatorUpdate(self.system, config, status)
