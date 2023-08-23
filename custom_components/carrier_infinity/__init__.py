@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 import python_carrier_infinity
 
 from .const import DOMAIN
+from .coordinator import MyCoordinator
 
 PLATFORMS: list[Platform] = [Platform.CLIMATE]
 
@@ -21,9 +22,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # TODO 3. Store an API object for your platforms to access
     # hass.data[DOMAIN][entry.entry_id] = MyApi(...)
     auth = await python_carrier_infinity.login(entry.data["username"], entry.data["password"])
-    hass.data[DOMAIN][entry.entry_id] = auth
+    systems = await python_carrier_infinity.get_systems(auth)
+
+    entry_data = []
+    coordinators = []
+    for system in systems.values():
+        coordinator = MyCoordinator(hass, system)
+        coordinators.append(coordinator)
+        entry_data.append((system, coordinator))
+
+    hass.data[DOMAIN][entry.entry_id] = entry_data
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    for coordinator in coordinators:
+        await coordinator.async_config_entry_first_refresh()
 
     return True
 

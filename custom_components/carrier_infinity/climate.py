@@ -1,8 +1,6 @@
 """Platform for climate integration."""
 from __future__ import annotations
 
-from datetime import timedelta
-import logging
 
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate import ATTR_TEMPERATURE, ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH
@@ -11,11 +9,7 @@ from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 # from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.update_coordinator import (
-    CoordinatorEntity,
-    DataUpdateCoordinator,
-    UpdateFailed,
-)
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 import python_carrier_infinity
@@ -23,46 +17,16 @@ from python_carrier_infinity.types import ActivityName, FanSpeed, Mode, Temperat
 
 from .const import DOMAIN
 
-_LOGGER = logging.getLogger(__name__)
-
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
-    auth = hass.data[DOMAIN][entry.entry_id]
+    systems_and_coordinators = hass.data[DOMAIN][entry.entry_id]
 
-    systems = await python_carrier_infinity.get_systems(auth)
     zones = []
-    coordinators = []
-    for system in systems.values():
-        coordinator = MyCoordinator(hass, system)
-        coordinators.append(coordinator)
+    for (system, coordinator) in systems_and_coordinators:
         config = await system.get_config()
         for zone_config in config.zones.values():
             zones.append(Zone(coordinator, system, zone_config))
 
     async_add_entities(zones)
-    for coordinator in coordinators:
-        await coordinator.async_config_entry_first_refresh()
-
-class MyCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, system):
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=system.name,
-            update_interval=timedelta(seconds=60),
-        )
-        self.system = system
-
-    async def _async_update_data(self):
-        print("FETCH")
-        config = await self.system.get_config()
-        status = await self.system.get_status()
-        return CoordinatorUpdate(self.system, config, status)
-
-class CoordinatorUpdate():
-    def __init__(self, system, config, status):
-        self.system = system
-        self.config = config
-        self.status = status
 
 class Zone(CoordinatorEntity, ClimateEntity):
     _attr_has_entity_name = True
