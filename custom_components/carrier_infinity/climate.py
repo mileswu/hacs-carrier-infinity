@@ -105,6 +105,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
         else:
             raise ValueError("TemperatureUnits not handled", data.status.temperature_units)
 
+        self._attr_hvac_action = data.status.current_operation
         self._attr_current_temperature = data.status.zones[self.zone_id].temperature
         self._attr_current_humidity = data.status.zones[self.zone_id].relative_humidity
         self._attr_preset_mode = data.status.zones[self.zone_id].activity.value
