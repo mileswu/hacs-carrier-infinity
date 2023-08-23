@@ -5,6 +5,7 @@ from datetime import timedelta
 import logging
 
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
+from homeassistant.components.climate import ATTR_TEMPERATURE, ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH
 from homeassistant.components.climate.const import HVACMode, FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH
 from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
 from homeassistant.core import HomeAssistant
@@ -52,6 +53,7 @@ class MyCoordinator(DataUpdateCoordinator):
         self.system = system
 
     async def _async_update_data(self):
+        print("FETCH")
         config = await self.system.get_config()
         status = await self.system.get_status()
         return CoordinatorUpdate(self.system, config, status)
@@ -82,6 +84,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
     def __init__(self, coordinator, system, zone_config):
         super().__init__(coordinator)
+        self.system = system
         self.zone_id = zone_config.id
         self._attr_unique_id = f"{system.serial}-{zone_config.id}"
         name = f"{system.name} - {zone_config.name}"
@@ -137,4 +140,31 @@ class Zone(CoordinatorEntity, ClimateEntity):
         else:
             raise ValueError("FanSpeed not handled", data.status.zones[self.zone_id].fan_speed)
 
+        self.async_write_ha_state()
+
+    async def async_set_temperature(self, **kwargs):
+        print(kwargs)
+
+        data = self.coordinator.data
+        config = data.config
+        cool_temp = data.status.zones[self.zone_id].target_cooling_temperature
+        heat_temp = data.status.zones[self.zone_id].target_heating_temperature
+
+        if config.zones[self.zone_id].hold_activity != ActivityName.MANUAL or config.zones[self.zone_id].hold_until is not None:
+            await self.system.set_zone_activity_hold(self.zone_id, ActivityName.MANUAL, None)
+        self._attr_preset_mode = ActivityName.MANUAL
+
+        if self._attr_hvac_mode == HVACMode.COOL:
+            cool_temp = kwargs.get(ATTR_TEMPERATURE)
+            self._attr_target_temperature = cool_temp
+        elif self._attr_hvac_mode == HVACMode.HEAT:
+            heat_temp = kwargs.get(ATTR_TEMPERATURE)
+            self._attr_target_temperature = heat_temp
+        elif self._attr_hvac_mode == HVACMode.HEAT_COOL:
+            cool_temp = kwargs.get(ATTR_TARGET_TEMP_HIGH)
+            heat_temp = kwargs.get(ATTR_TARGET_TEMP_LOW)
+            self._attr_target_temperature_low = heat_temp
+            self._attr_target_temperature_high = cool_temp
+
+        await self.system.set_zone_activity_temp(self.zone_id, ActivityName.MANUAL, cool_temp, heat_temp)
         self.async_write_ha_state()
