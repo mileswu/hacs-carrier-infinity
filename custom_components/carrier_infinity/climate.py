@@ -107,7 +107,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
         self._attr_current_temperature = data.status.zones[self.zone_id].temperature
         self._attr_current_humidity = data.status.zones[self.zone_id].relative_humidity
-        self._attr_preset_mode = data.status.zones[self.zone_id].activity
+        self._attr_preset_mode = data.status.zones[self.zone_id].activity.value
         self._attr_target_temperature = None
         self._attr_target_temperature_low = None
         self._attr_target_temperature_high = None
@@ -142,15 +142,33 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
         self.async_write_ha_state()
 
+
+    async def async_set_preset_mode(self, preset_mode):
+        activity = ActivityName(preset_mode)
+        await self.system.set_zone_activity_hold(self.zone_id, activity, None)
+        self._attr_preset_mode = preset_mode
+
+        zone_config = self.coordinator.data.config.zones[self.zone_id]
+        if self._attr_hvac_mode == HVACMode.COOL:
+            self._attr_target_temperature = zone_config.activities[activity].target_cooling_temperature
+        elif self._attr_hvac_mode == HVACMode.HEAT:
+            self._attr_target_temperature = zone_config.activities[activity].target_heating_temperature
+        elif self._attr_hvac_mode == HVACMode.HEAT_COOL:
+            self._attr_target_temperature_high = zone_config.activities[activity].target_cooling_temperature
+            self._attr_target_temperature_low = zone_config.activities[activity].target_heating_temperature
+        self._attr_fan_mode = zone_config.activities[activity].fan_speed
+
+        self.async_write_ha_state()
+
     async def async_set_temperature(self, **kwargs):
         print(kwargs)
 
         data = self.coordinator.data
-        config = data.config
+        zone_config = data.config.zones[self.zone_id]
         cool_temp = data.status.zones[self.zone_id].target_cooling_temperature
         heat_temp = data.status.zones[self.zone_id].target_heating_temperature
 
-        if config.zones[self.zone_id].hold_activity != ActivityName.MANUAL or config.zones[self.zone_id].hold_until is not None:
+        if zone_config.hold_activity != ActivityName.MANUAL or zone_config.hold_until is not None:
             await self.system.set_zone_activity_hold(self.zone_id, ActivityName.MANUAL, None)
         self._attr_preset_mode = ActivityName.MANUAL
 
