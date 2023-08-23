@@ -10,7 +10,7 @@ import python_carrier_infinity
 from .const import DOMAIN
 from .coordinator import MyCoordinator
 
-PLATFORMS: list[Platform] = [Platform.CLIMATE]
+PLATFORMS: list[Platform] = [Platform.CLIMATE, Platform.SENSOR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

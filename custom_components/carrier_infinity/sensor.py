@@ -1,0 +1,43 @@
+from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.helpers.device_registry import DeviceInfo
+from .const import DOMAIN
+from python_carrier_infinity.types import TemperatureUnits
+
+async def async_setup_entry(hass, entry, async_add_entities) -> None:
+    systems_and_coordinators = hass.data[DOMAIN][entry.entry_id]
+
+    sensors = []
+    for (system, coordinator) in systems_and_coordinators:
+        sensors.append(OutsideTemperature(coordinator, system))
+
+    async_add_entities(sensors)
+
+class OutsideTemperature(CoordinatorEntity, SensorEntity):
+    _attr_device_class = SensorDeviceClass.TEMPERATURE
+    _attr_native_unit_of_measurement = TEMP_FAHRENHEIT
+
+    def __init__(self, coordinator, system):
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{system.serial}-outsidetemp"
+        self._attr_name = "Outside Temperature"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system.serial)},
+            name=system.name,
+            manufacturer="Carrier",
+            model="Infinity System"
+        )
+
+    def _handle_coordinator_update(self) -> None:
+        data = self.coordinator.data
+
+        if data.status.temperature_units == TemperatureUnits.CELCIUS:
+            self._attr_native_unit_of_measurement = TEMP_CELSIUS
+        elif data.status.temperature_units == TemperatureUnits.FARENHEIT:
+            self._attr_native_unit_of_measurement = TEMP_FAHRENHEIT
+        else:
+            raise ValueError("TemperatureUnits not handled", data.status.temperature_units)
+
+        self._attr_native_value = data.status.outside_temperature
+        self.async_write_ha_state()
