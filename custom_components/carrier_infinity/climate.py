@@ -170,3 +170,19 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
         await self.system.set_zone_activity_temp(self.zone_id, ActivityName.MANUAL, cool_temp, heat_temp)
         self.async_write_ha_state()
+
+    async def async_set_fan_mode(self, fan_mode):
+        if fan_mode == FAN_OFF:
+            fan = FanSpeed.OFF
+        elif fan_mode == FAN_LOW:
+            fan = FanSpeed.LOW
+        elif fan_mode == FAN_MEDIUM:
+            fan = FanSpeed.MED
+        elif fan_mode == FAN_HIGH:
+            fan = FanSpeed.HIGH
+        else:
+            raise ValueError("fan_mode not handled", fan_mode)
+
+        await self.system.set_zone_activity_fan(self.zone_id, self._attr_preset_mode, fan)
+        self._attr_fan_mode = fan
+        self.async_write_ha_state()
