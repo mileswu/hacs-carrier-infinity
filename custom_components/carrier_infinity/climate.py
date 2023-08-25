@@ -111,6 +111,23 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
         self.async_write_ha_state()
 
+    async def async_set_hvac_mode(self, hvac_mode):
+        if hvac_mode == HVACMode.OFF:
+            mode = Mode.OFF
+        elif hvac_mode == HVACMode.COOL:
+            mode = Mode.COOL
+        elif hvac_mode == HVACMode.HEAT:
+            mode = Mode.HEAT
+        elif hvac_mode == HVACMode.HEAT_COOL:
+            mode = Mode.AUTO
+        elif hvac_mode == HVACMode.FAN_ONLY:
+            mode = mode.FAN_ONLY
+        else:
+            raise ValueError("hvac_mode not handled", hvac_mode)
+
+        await self.system.set_mode(mode)
+        self._attr_hvac_mode = hvac_mode
+        self.async_write_ha_state()
 
     async def async_set_preset_mode(self, preset_mode):
         activity = ActivityName(preset_mode)
