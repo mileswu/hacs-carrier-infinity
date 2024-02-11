@@ -31,8 +31,6 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 class Zone(CoordinatorEntity, ClimateEntity):
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_precision = 1.0
-    _attr_target_temperature_step = 1.0
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.HEAT_COOL, HVACMode.FAN_ONLY]
     _attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
     _attr_preset_modes = [activity.value for activity in ActivityName]
