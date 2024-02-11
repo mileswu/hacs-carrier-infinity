@@ -37,6 +37,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
     _attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
     _attr_preset_modes = [activity.value for activity in ActivityName]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.PRESET_MODE
+    _attr_translation_key = DOMAIN
 
     # initialization values
     _attr_fan_mode = None

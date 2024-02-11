@@ -15,5 +15,19 @@
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
+  },
+  "entity": {
+    "climate": {
+      "carrier_infinity": {
+        "state_attributes": {
+          "preset_mode": {
+            "state": {
+              "manual": "Manual",
+              "wake": "Wake"
+            }
+          }
+        }
+      }
+    }
   }
 }
