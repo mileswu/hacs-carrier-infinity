@@ -23,7 +23,8 @@
           "preset_mode": {
             "state": {
               "manual": "Manual",
-              "wake": "Wake"
+              "wake": "Wake",
+              "per_schedule": "Per schedule"
             }
           }
         }

@@ -1,6 +1,6 @@
 """Platform for climate integration."""
 from __future__ import annotations
-
+import time
 
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate import ATTR_TEMPERATURE, ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH
@@ -16,6 +16,8 @@ import python_carrier_infinity
 from python_carrier_infinity.types import ActivityName, FanSpeed, Mode, TemperatureUnits
 
 from .const import DOMAIN
+
+PER_SCHEDULE = "per_schedule"
 
 async def async_setup_entry(hass, entry, async_add_entities) -> None:
     systems_and_coordinators = hass.data[DOMAIN][entry.entry_id]
@@ -33,7 +35,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
     _attr_name = None
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.COOL, HVACMode.HEAT, HVACMode.HEAT_COOL, HVACMode.FAN_ONLY]
     _attr_fan_modes = [FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH]
-    _attr_preset_modes = [activity.value for activity in ActivityName]
+    _attr_preset_modes = [activity.value for activity in ActivityName] + [PER_SCHEDULE]
     _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE | ClimateEntityFeature.FAN_MODE | ClimateEntityFeature.PRESET_MODE
     _attr_translation_key = DOMAIN
 
@@ -146,21 +148,27 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
 
     async def async_set_preset_mode(self, preset_mode):
-        activity = ActivityName(preset_mode)
-        await self.system.set_zone_activity_hold(self.zone_id, activity, None)
-        self._attr_preset_mode = preset_mode
+        if preset_mode == PER_SCHEDULE:
+            await self.system.set_zone_activity_hold(self.zone_id, None, None)
+            time.sleep(5.0)
+            await self.coordinator.async_refresh()
+        else:
+            activity = ActivityName(preset_mode)
+            await self.system.set_zone_activity_hold(self.zone_id, activity, None)
 
-        zone_config = self.coordinator.data.config.zones[self.zone_id]
-        if self._attr_hvac_mode == HVACMode.COOL:
-            self._attr_target_temperature = zone_config.activities[activity].target_cooling_temperature
-        elif self._attr_hvac_mode == HVACMode.HEAT:
-            self._attr_target_temperature = zone_config.activities[activity].target_heating_temperature
-        elif self._attr_hvac_mode == HVACMode.HEAT_COOL:
-            self._attr_target_temperature_high = zone_config.activities[activity].target_cooling_temperature
-            self._attr_target_temperature_low = zone_config.activities[activity].target_heating_temperature
-        self._attr_fan_mode = zone_config.activities[activity].fan_speed
+            self._attr_preset_mode = preset_mode
 
-        self.async_write_ha_state()
+            zone_config = self.coordinator.data.config.zones[self.zone_id]
+            if self._attr_hvac_mode == HVACMode.COOL:
+                self._attr_target_temperature = zone_config.activities[activity].target_cooling_temperature
+            elif self._attr_hvac_mode == HVACMode.HEAT:
+                self._attr_target_temperature = zone_config.activities[activity].target_heating_temperature
+            elif self._attr_hvac_mode == HVACMode.HEAT_COOL:
+                self._attr_target_temperature_high = zone_config.activities[activity].target_cooling_temperature
+                self._attr_target_temperature_low = zone_config.activities[activity].target_heating_temperature
+            self._attr_fan_mode = zone_config.activities[activity].fan_speed
+
+            self.async_write_ha_state()
 
     async def async_set_temperature(self, **kwargs):
         data = self.coordinator.data
