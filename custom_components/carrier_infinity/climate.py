@@ -64,8 +64,14 @@ class Zone(CoordinatorEntity, ClimateEntity):
 
         if data.status.temperature_units == TemperatureUnits.CELCIUS:
             self._attr_temperature_unit = TEMP_CELSIUS
+            self._attr_min_temp = 12.0
+            self._attr_max_temp = 30.0
+            self._attr_target_temperature_step = 0.5
         elif data.status.temperature_units == TemperatureUnits.FARENHEIT:
             self._attr_temperature_unit = TEMP_FAHRENHEIT
+            self._attr_min_temp = 52.0
+            self._attr_max_temp = 88.0
+            self._attr_target_temperature_step = 1.0
         else:
             raise ValueError("TemperatureUnits not handled", data.status.temperature_units)
 
