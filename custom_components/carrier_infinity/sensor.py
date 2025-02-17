@@ -1,6 +1,6 @@
 from homeassistant.components.sensor import SensorEntity, SensorDeviceClass
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.const import UnitOfTemperature
 from homeassistant.helpers.entity import DeviceInfo
 from .const import DOMAIN
 from python_carrier_infinity.types import TemperatureUnits
@@ -17,7 +17,7 @@ async def async_setup_entry(hass, entry, async_add_entities) -> None:
 
 class OutsideTemperature(CoordinatorEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_native_unit_of_measurement = TEMP_FAHRENHEIT
+    _attr_native_unit_of_measurement = UnitOfTemperature.FAHRENHEIT
     _attr_has_entity_name = True
     _attr_name = "Outside Temperature"
 
@@ -35,9 +35,9 @@ class OutsideTemperature(CoordinatorEntity, SensorEntity):
         data = self.coordinator.data
 
         if data.status.temperature_units == TemperatureUnits.CELCIUS:
-            self._attr_native_unit_of_measurement = TEMP_CELSIUS
+            self._attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
         elif data.status.temperature_units == TemperatureUnits.FARENHEIT:
-            self._attr_native_unit_of_measurement = TEMP_FAHRENHEIT
+            self._attr_native_unit_of_measurement = UnitOfTemperature.FAHRENHEIT
         else:
             raise ValueError("TemperatureUnits not handled", data.status.temperature_units)
 
