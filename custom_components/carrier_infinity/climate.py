@@ -5,7 +5,7 @@ import time
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate import ATTR_TEMPERATURE, ATTR_TARGET_TEMP_LOW, ATTR_TARGET_TEMP_HIGH
 from homeassistant.components.climate.const import HVACMode, FAN_OFF, FAN_LOW, FAN_MEDIUM, FAN_HIGH
-from homeassistant.const import TEMP_CELSIUS, TEMP_FAHRENHEIT
+from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity import DeviceInfo
 # from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -42,7 +42,7 @@ class Zone(CoordinatorEntity, ClimateEntity):
     # initialization values
     _attr_fan_mode = None
     _attr_hvac_mode = None
-    _attr_temperature_unit = TEMP_CELSIUS
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_target_temperature_low = None
     _attr_target_temperature_high = None
     _attr_preset_mode = None
@@ -64,12 +64,12 @@ class Zone(CoordinatorEntity, ClimateEntity):
         data = self.coordinator.data
 
         if data.status.temperature_units == TemperatureUnits.CELCIUS:
-            self._attr_temperature_unit = TEMP_CELSIUS
+            self._attr_temperature_unit = UnitOfTemperature.CELSIUS
             self._attr_min_temp = 12.0
             self._attr_max_temp = 30.0
             self._attr_target_temperature_step = 0.5
         elif data.status.temperature_units == TemperatureUnits.FARENHEIT:
-            self._attr_temperature_unit = TEMP_FAHRENHEIT
+            self._attr_temperature_unit = UnitOfTemperature.FAHRENHEIT
             self._attr_min_temp = 52.0
             self._attr_max_temp = 88.0
             self._attr_target_temperature_step = 1.0
